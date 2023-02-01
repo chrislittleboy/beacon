@@ -1,4 +1,10 @@
 #' @export
+#' @import dplyr
+#' @import terra
+#' @import sf
+#' @import FNN
+#' @import fasterize
+
 getriverpoints <- function(dam_name,direction, river_distance=100000, ac_tolerance=2, e_tolerance = 5, nn=10) {
   # selects the dam from the list of original dams
   dam <- dams %>% filter(name == dam_name) %>% st_make_valid()
@@ -24,7 +30,7 @@ getriverpoints <- function(dam_name,direction, river_distance=100000, ac_toleran
     # removes upstream areas from the DEM
     dem_dam[dem_dam >= minmax(dem_damextent)[2]] <- NA
     # extracts elevations for river pixels
-    dem_dam <- dem_dam * fac_dam_binary 
+    dem_dam <- dem_dam * fac_dam_binary
     # creates a binary mask for dems
     dem_dam_binary <- dem_dam
     dem_dam_binary[!is.na(dem_dam_binary)] <- 1
@@ -38,7 +44,7 @@ getriverpoints <- function(dam_name,direction, river_distance=100000, ac_toleran
     # removes upstream areas from the DEM
     dem_dam[dem_dam <= minmax(dem_damextent)[1]] <- NA
     # extracts elevations for river pixels
-    dem_dam <- dem_dam * fac_dam_binary 
+    dem_dam <- dem_dam * fac_dam_binary
     # creates a binary mask for dems
     dem_dam_binary <- dem_dam
     dem_dam_binary[!is.na(dem_dam_binary)] <- 1
@@ -57,7 +63,7 @@ getriverpoints <- function(dam_name,direction, river_distance=100000, ac_toleran
   dem_sf <- terra::as.data.frame(dem_dam, xy = T) %>% st_as_sf(coords = c("x","y")) %>% drop_na() %>% rename(e = hyd_glo_dem_15s)
   st_crs(dem_sf) <- st_crs(dam)
   #joins this with the accumulation information
-  points <- st_join(dam_sf, dem_sf) 
+  points <- st_join(dam_sf, dem_sf)
   points$e <- round(points$e/10)
   # initialises the output value data frame ready to be populated
   points$dtostart <- as.numeric(st_distance(startpoint, dam_sf))
@@ -75,7 +81,7 @@ getriverpoints <- function(dam_name,direction, river_distance=100000, ac_toleran
   distance <- 0
   incrementor <- 1
   damnewcrs <- st_transform(dam, espg)
-  
+
   while(incrementor < nrow(dam_sf)){
     mp <- matrix(unlist(points$geometry), ncol = 2, byrow = T)
     nd <- get.knnx(mp,mp,ifelse(nrow(mp) <= nn, nrow(mp), nn))
@@ -103,7 +109,7 @@ getriverpoints <- function(dam_name,direction, river_distance=100000, ac_toleran
     if(direction == "upstream") {points <- points[points$ac <= pl$ac,]}
     points$id <- 1:nrow(points)
     newid <- which(points$geometry == pn$geometry)
-    pn$id <- newid 
+    pn$id <- newid
     incrementor = incrementor + 1
   }
   output <- output %>% as_tibble() %>% drop_na() %>% mutate(espg = espg)

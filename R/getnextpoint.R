@@ -1,4 +1,5 @@
 getnextpoint <- function(points,pl,nd,ac_tolerance,e_tolerance,direction,nn){
+  intersect <- dplyr::intersect
   knn <- ifelse(nrow(points) <= nn, nrow(points), nn)
   if(direction == "downstream"){
     index <- min(
