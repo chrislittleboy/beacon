@@ -1,11 +1,12 @@
-#' @export
-#' @import dplyr
-#' @import terra
-#' @import sf
-#' @import FNN
-#' @import fasterize
-
-getriverpoints <- function(dam_name,direction, river_distance=100000, ac_tolerance=2, e_tolerance = 5, nn=10) {
+getriverpoints <- function(dam_name,
+                           direction,
+                           river_distance,
+                           ac_tolerance,
+                           e_tolerance,
+                           nn,
+                           dams = dams,
+                           fac = fac,
+                           dem = dem) {
   # selects the dam from the list of original dams
   dam <- dams %>% filter(name == dam_name) %>% st_make_valid()
   # creates a buffer of 'river_distance' meters around the dam

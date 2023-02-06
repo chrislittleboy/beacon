@@ -1,11 +1,8 @@
-#' @export
-
-getline <- function(x, cutoff) {
-  x <- x %>% 
-    mutate(cum_flow_accum = flow_accum/min(flow_accum)) %>% 
-    filter(cum_flow_accum <= cutoff) %>%
+getline <- function(x) {
+  x <- x %>%
+    mutate(cum_flow_accum = flow_accum/min(flow_accum)) %>%
     st_as_sf(coords = c("x", "y"),
-             crs = x$espg[1]) %>% 
+             crs = x$espg[1]) %>%
     st_transform(4326)
   line <- data.frame(x = 1:nrow(x), y = 1:nrow(x))
   i <- 1
