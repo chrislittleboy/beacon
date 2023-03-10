@@ -1,4 +1,4 @@
-getriverpoints <- function(dam_name,
+getriverpoints <- function(reservoir,
                            direction,
                            river_distance,
                            ac_tolerance,
@@ -7,10 +7,8 @@ getriverpoints <- function(dam_name,
                            dams = dams,
                            fac = fac,
                            dem = dem) {
-  # selects the dam from the list of original dams
-  dam <- dams %>% filter(name == dam_name) %>% st_make_valid()
   # creates a buffer of 'river_distance' meters around the dam
-  dam_buffer <- st_buffer(dam, river_distance)
+  dam_buffer <- st_buffer(reservoir, river_distance)
   # crops the flow accumulation raster to the dam buffer
   fac_dam <- crop(fac, dam_buffer, snap = "out")
   # removes low/insignificant values of flow accumulation
@@ -18,7 +16,7 @@ getriverpoints <- function(dam_name,
   # crops the dem to the dam buffer
   dem_dam <- crop(dem, dam_buffer, snap = "out")
   # creates a raster for the dam extent
-  dam_binary <- rast(fasterize(dam, raster(fac_dam)))
+  dam_binary <- rast(fasterize(reservoir, raster(fac_dam)))
   fac_damextent <- fac_dam * dam_binary
   dem_damextent <- dem_dam * dam_binary
   facminmax <- getminmaxatdam(fac_damextent)
@@ -55,14 +53,14 @@ getriverpoints <- function(dam_name,
   fac_dam[fac_dam <= 1000] <- NA
   dam_sf <- terra::as.data.frame(fac_dam, xy = T) %>% st_as_sf(coords = c("x","y")) %>% drop_na() %>% rename(ac = hyd_glo_acc_15s)
   # matches the crs with the dam crs
-  st_crs(dam_sf) <- st_crs(dam)
+  st_crs(dam_sf) <- st_crs(reservoir)
   # calculates the distance of each point to the dam
   if(direction == "downstream") { startpoint <- st_as_sf(facminmax, coords = 1:2)[2,]}
   if(direction == "upstream") { startpoint <- st_as_sf(facminmax, coords = 1:2)[1,]}
-  st_crs(startpoint) <- st_crs(dam)
+  st_crs(startpoint) <- st_crs(reservoir)
   # extracts the elevation information
   dem_sf <- terra::as.data.frame(dem_dam, xy = T) %>% st_as_sf(coords = c("x","y")) %>% drop_na() %>% rename(e = hyd_glo_dem_15s)
-  st_crs(dem_sf) <- st_crs(dam)
+  st_crs(dem_sf) <- st_crs(reservoir)
   #joins this with the accumulation information
   points <- st_join(dam_sf, dem_sf)
   points$e <- round(points$e/10)
@@ -81,7 +79,7 @@ getriverpoints <- function(dam_name,
   closest <- points[points$dtostart == min(points$dtostart),]
   distance <- 0
   incrementor <- 1
-  damnewcrs <- st_transform(dam, espg)
+  damnewcrs <- st_transform(reservoir, espg)
 
   while(incrementor < nrow(dam_sf)){
     mp <- matrix(unlist(points$geometry), ncol = 2, byrow = T)

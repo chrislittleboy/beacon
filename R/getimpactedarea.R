@@ -22,7 +22,7 @@ getimpactedarea <- function(dam,
   water_bodies <- rast("./cci/wb100_Dec22.nc")
   basins <- read_sf("./hydro/basins/globalbasins.shp")
 
-  down <- getriverpoints(dam_name = dam,
+  down <- getriverpoints(reservoir = reservoir,
                          direction = "downstream",
                          river_distance = river_distance,
                          nn = nn,
@@ -31,7 +31,7 @@ getimpactedarea <- function(dam,
                          dams = dams,
                          fac = fac,
                          dem = dem)
-  up <- getriverpoints(dam_name = dam,
+  up <- getriverpoints(reservoir = reservoir,
                        direction = "upstream",
                        river_distance = river_distance,
                        nn = nn,
@@ -46,8 +46,8 @@ getimpactedarea <- function(dam,
   colnames(downline)[1] <- colnames(upline)[1] <- "geometry"
   st_geometry(downline) <- st_geometry(upline) <- "geometry"
 
-  reservoir <- dams %>% filter(name == dam)
-  damsmooth <- getsmoothreservoirpolygon(reservoir, water_bodies, poss_expand) %>% select()
+  reservoir <- dams %>% filter(name == dam) %>% st_make_valid()
+  reservoir <- getsmoothreservoirpolygon(reservoir, water_bodies, poss_expand) %>% select()
   basearea <- rbind(damsmooth,upline,downline)
   impactedarea <- cliptobasinandbuffers(damsmooth, upline, downline,basins,streambuffersize,reservoirbuffersize)
   impactedarea <- smooth(impactedarea, method = "ksmooth", smoothness = 3)

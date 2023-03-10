@@ -1,4 +1,4 @@
-bbox_expand <- function(dam, factor = 0.25) {
+bbox_expand <- function(dam, factor = 0.1) {
   bbox <- st_bbox(dam)
   xrange <- bbox[[3]] - bbox[[1]]
   yrange <- bbox[[4]] - bbox[[2]]

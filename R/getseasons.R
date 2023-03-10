@@ -39,7 +39,7 @@ getSeasons <- function(dam, yearly_prec, yearly_tmax, yearly_tmin, weekly_ndvi){
   vars$ag_ndvi.ndvi_lag <- vars$ag_ndvi.ndvi_lag*f_lag
   vars$prec <- vars$prec * f_prec
   krange <- 2:4
-  avg_sil <- sapply(krange, silhouette_score)
+  avg_sil <- sapply(X = krange, FUN = silhouette_score, vars = vars)
   k <- which(avg_sil == max(avg_sil)) + 1
   cs <- kmeans(vars, centers = k)$cluster
   ag_clim <- ag_clim %>% mutate(cluster = cs)
