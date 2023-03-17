@@ -3,8 +3,8 @@ generate_tifs <- function(img,g,path,slopeasp, maxext){
   img <- img %>% filter(group == g)
   imlist <- as.list(rep(NA, nrow(img)))
   corimlist <- as.list(rep(NA, nrow(img)))
-
-  for(i in 1:nrow(img)){
+i <- 1
+while(i <= nrow(img)){
     imls <- ifelse(img[i,]$ls %in% c("4","5","7"), "4-7", "8-9")
     im <- rast(paste0(path, "/temp/", img$name[i]))
     # removes zeros
@@ -16,7 +16,13 @@ generate_tifs <- function(img,g,path,slopeasp, maxext){
     if(imls == "8-9"){
       cloud <- subst(im$QA_PIXEL, from = c(21824, 21952), to = 1, others = NA)
     }
-    im <- im * cloud
+    vc <- values(cloud)
+    skipi <- ifelse(sum(is.na(vc)) == length(vc), T, F)
+    if(isTRUE(skipi)){
+      imlist[i] <- NA
+      corimlist[i] <- NA}
+    if(isFALSE(skipi)){
+      im <- im * cloud
     # standardises band names
     if(imls == "4-7"){
     im$c <- im$SR_B1
@@ -34,19 +40,23 @@ generate_tifs <- function(img,g,path,slopeasp, maxext){
     corsi <- rast(list(c_swir, c_nir, c_r))
     imlist[[i]] <- im
     corimlist[[i]] <- corsi
-  }
+      }
+    i <- i + 1
+    }
   # computes true colour (uncorrected) mosaic
-  collection <- sprc(imlist)
-  mosaic <- mosaic(collection, fun = "median")
+imlist <- imlist[!is.na(imlist)]
+corimlist <- corimlist[!is.na(corimlist)]
+collection <- sprc(imlist)
+mosaic <- mosaic(collection, fun = "median")
   # computes spectral indicies (corrected) mosaic
   corcollection <- sprc(corimlist)
   cmosaic <- mosaic(corcollection, fun = "median")
   tc <- subset(mosaic, 2:4)
   ndvi <- (cmosaic$nir-cmosaic$r) / (cmosaic$nir + cmosaic$r)
   ndbi <- (cmosaic$swir-cmosaic$nir) / (cmosaic$swir + cmosaic$nir)
-  writeRaster(ndvi, filename = paste0(path, "/output/ndvi_", g, ".tif"))
-  writeRaster(ndbi, filename = paste0(path, "/output/ndbi_", g, ".tif"))
-  writeRaster(tc, filename = paste0(path, "/output/tc_", g, ".tif"))
+  writeRaster(ndvi, filename = paste0(path, "/output/ndvi/", g, ".tif"), overwrite = T)
+  writeRaster(ndbi, filename = paste0(path, "/output/ndbi/", g, ".tif"), overwrite = T)
+  writeRaster(tc, filename = paste0(path, "/output/tc/", g, ".tif"), overwrite = T)
   rm(collection, mosaic, corcollection, cmosaic, tc,ndvi,ndbi, imlist, corimlist)
   gc()
 }

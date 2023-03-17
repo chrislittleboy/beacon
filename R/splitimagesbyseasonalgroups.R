@@ -1,4 +1,6 @@
-splitimagesbyseasonalgroups <- function(images, construction_year){
+splitimagesbyseasonalgroups <- function(images, construction_year, maxext){
+  images$area <- st_area(st_as_sf(as.polygons(maxext)))/1000000
+  images$kbkm2 <- (images$size * 1024)/ images$area
   before <- images %>% filter(year < construction_year)
   after <- images %>% filter(year >= construction_year)
   ib <- as.list(sort(as.numeric(unique(before$i)), decreasing = F))
@@ -16,6 +18,5 @@ splitimagesbyseasonalgroups <- function(images, construction_year){
   mb <- listtodf(monsoon_before)
   ma <- listtodf(monsoon_after)
   all <- rbind(ha,hb,cb,ca,mb,ma)
-  all <- all %>% filter(size >= 1)
   return(all)
 }
